@@ -1,0 +1,1395 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<!-- PWA Essentials -->
+<meta name="theme-color" content="#111827">
+<link rel="manifest" href="./manifest.json">
+
+<!-- iOS tweaks -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="مدیران مارلیک">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>پروژه مدیران مارلیک - نسخه ۴</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        :root {
+            --primary: #1a3c6e;
+            --secondary: #f39c12;
+            --bg: #f0f2f5;
+            --card-bg: #ffffff;
+            --text: #2c3e50;
+            --success: #27ae60;
+            --danger: #c0392b;
+            --font: 'Vazirmatn', sans-serif;
+            --radius: 16px;
+        }
+
+        * { box-sizing: border-box; font-family: var(--font); -webkit-tap-highlight-color: transparent; }
+
+        body {
+            background-color: var(--bg);
+            margin: 0;
+            padding: 0;
+            color: var(--text);
+            padding-bottom: 90px;
+        }
+
+        body.modal-open { overflow: hidden; }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            min-height: 100vh;
+            background: var(--bg);
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.05);
+        }
+
+        .app-header {
+            background: linear-gradient(135deg, var(--primary), #2c3e50);
+            color: white;
+            padding: 30px 20px 50px;
+            border-bottom-left-radius: 35px;
+            border-bottom-right-radius: 35px;
+            box-shadow: 0 10px 20px rgba(26, 60, 110, 0.2);
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 90;
+        }
+        .app-header h1 { margin: 0; font-size: 1.5rem; font-weight: 900; }
+        .app-header p { margin: 8px 0 0; font-size: 0.9rem; opacity: 0.9; }
+        
+        .user-input {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.4);
+            color: white;
+            padding: 12px;
+            border-radius: 12px;
+            width: 80%;
+            max-width: 400px;
+            margin-top: 20px;
+            outline: none;
+            text-align: center;
+            font-size: 1rem;
+        }
+        .user-input::placeholder { color: rgba(255,255,255,0.8); }
+
+        .view-section { display: none; padding: 20px; animation: fadeIn 0.4s ease; }
+        .view-section.active { display: block; }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
+
+        .task-card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 25px;
+            margin-top: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.03);
+            border: 1px solid var(--primary);
+            border-right: 6px solid var(--secondary);
+            cursor: pointer;
+            position: relative;
+            z-index: 10;
+        }
+        .task-card:first-of-type { margin-top: -35px; }
+        
+        .section-divider {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--primary);
+            font-weight: bold;
+            margin: 30px 0 15px;
+            font-size: 1.1rem;
+        }
+        .section-divider::after { content:""; flex:1; height:1px; background:#ccc; }
+
+        .back-btn {
+            background: white;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .acc-item {
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            border: 1px solid var(--primary);
+            overflow: hidden;
+        }
+        .acc-header {
+            padding: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            font-weight: 700;
+            transition: background 0.2s;
+            background: #fff;
+        }
+        .acc-header.active { background: #eaf2f8; color: var(--primary); border-bottom: 1px solid #dae1e7; }
+        .acc-body { display: none; padding: 15px; background: #fff; }
+        .acc-body.open { display: block; }
+
+        .report-acc-item {
+            border: 1px solid var(--primary);
+            border-radius: 12px;
+            margin-bottom: 15px;
+            background: white;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+        }
+
+        .week-ctrl-container {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #eee;
+        }
+        .week-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px;
+            gap: 5px;
+        }
+        .week-nav-group { display: flex; gap: 5px; }
+        
+        .wc-btn {
+            background: white;
+            border: 1px solid #ddd;
+            color: var(--primary);
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            transition: 0.2s;
+        }
+        .wc-btn:active { background: var(--primary); color: white; }
+        .wc-btn.small-btn { width: 30px; font-size: 1rem; background: #eee; }
+        
+        .week-display { text-align: center; }
+        .week-title { font-weight: 800; color: var(--primary); font-size: 1rem; display: block; }
+        .week-subtitle { font-size: 0.7rem; color: #888; }
+
+        .feat-row { margin-bottom: 12px; border-bottom: 1px dashed #f0f0f0; padding-bottom: 8px; }
+        .feat-name { font-size: 0.9rem; font-weight: 600; margin-bottom: 6px; display: block; }
+        .days-grid { display: flex; gap: 4px; }
+        .day-box {
+            flex: 1;
+            text-align: center;
+            padding: 8px 0;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            background: #fff;
+            color: #ccc;
+            transition: all 0.2s;
+            user-select: none;
+        }
+        .day-box.checked { 
+            background: var(--success);
+            color: white;
+            border-color: var(--success);
+            transform: scale(1.05);
+            box-shadow: 0 2px 5px rgba(39, 174, 96, 0.4);
+        }
+
+        .report-title {
+            color: var(--primary);
+            border-right: 4px solid var(--secondary);
+            padding-right: 10px;
+            margin: 0 0 20px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-val { font-size: 1.4rem; font-weight: 900; color: var(--primary); }
+        .stat-lbl { font-size: 0.8rem; color: #666; margin-top: 5px; }
+
+        .stats-ring-layout {
+            position: relative;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(120px, 1fr));
+            gap: 12px;
+            padding: 40px 15px;
+            border-radius: 16px;
+            border: 1px solid #e3e9f4;
+            background: #fff;
+            margin-bottom: 20px;
+        }
+        .ring-card {
+            background: #fdfdfd;
+            border: 1px solid #eef1f7;
+            border-radius: 12px;
+            padding: 14px 10px;
+            text-align: center;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.03);
+        }
+        .ring-card .stat-val { font-size: 1.45rem; font-weight: 900; color: var(--primary); }
+        .ring-card .stat-lbl { font-size: 0.8rem; color: #8091a7; margin-top: 6px; }
+
+        .chart-container {
+            position: relative;
+            width: 170px;
+            height: 170px;
+            margin: 0 auto 20px;
+        }
+        .chart-container canvas {
+            width: 100%;
+            height: 100%;
+        }
+        .chart-container.ring-chart {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            margin: 0;
+        }
+        .chart-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+        .chart-center span {
+            display: block;
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: var(--primary);
+        }
+        .chart-center small {
+            display: block;
+            font-size: 0.75rem;
+            color: #8391a4;
+            margin-top: 4px;
+        }
+
+        .btn-pdf {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        #btn-back-to-top {
+            display: none;
+            position: fixed;
+            bottom: 85px;
+            right: 20px;
+            width: 45px;
+            height: 45px;
+            background: rgba(26, 60, 110, 0.8);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 99;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            backdrop-filter: blur(4px);
+        }
+
+        .nav-bar {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            max-width: 800px;
+            background: white;
+            display: flex;
+            height: 70px;
+            box-shadow: 0 -2px 15px rgba(0,0,0,0.05);
+            z-index: 100;
+        }
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #bdc3c7;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        .nav-item.active { color: var(--primary); font-weight: bold; }
+        .nav-icon { font-size: 1.5rem; margin-bottom: 4px; }
+
+        .pdf-header { display: none; text-align: center; margin-bottom: 20px; color: var(--primary); }
+
+        .step-text {
+            background: #fdfdfd;
+            border-radius: 12px;
+            border: 1px solid #e5e9f2;
+            padding: 15px 18px;
+            line-height: 2.1;
+            text-align: justify;
+            color: #2c3e50;
+        }
+        .step-text p { margin: 0 0 12px 0; }
+        .step-text p:last-child { margin-bottom: 0; }
+
+        .backup-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .backup-card {
+            background: white;
+            border-radius: 14px;
+            border: 1px solid #dfe6f1;
+            padding: 20px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.05);
+        }
+        .backup-card h4 {
+            margin: 0 0 10px 0;
+            color: var(--primary);
+            font-weight: 800;
+        }
+        .backup-card p {
+            margin: 0 0 15px 0;
+            color: #536170;
+            font-size: 0.9rem;
+            line-height: 1.7;
+        }
+        .backup-card textarea {
+            width: 100%;
+            min-height: 90px;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #ccd6e4;
+            font-family: monospace;
+            direction: ltr;
+            background: #f6f8fb;
+            color: #2d3436;
+            resize: vertical;
+        }
+        .backup-card textarea[readonly] { cursor: default; }
+
+        .backup-actions button,
+        .restore-btn,
+        .copy-btn {
+            width: 100%;
+            padding: 11px;
+            border: none;
+            border-radius: 9px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 12px;
+        }
+        .copy-btn { background: var(--primary); color: white; }
+        .restore-btn { background: #27ae60; color: white; }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            backdrop-filter: blur(2px);
+            padding: 20px;
+        }
+        .modal-overlay.hidden { display: none; }
+        .modal-content {
+            background: white;
+            padding: 25px 20px;
+            border-radius: 18px;
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+        .modal-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: #f1c40f;
+        }
+        .modal-content h3 {
+            margin: 0 0 10px 0;
+            color: var(--primary);
+            font-weight: 900;
+        }
+        .modal-content p {
+            margin: 0 0 20px 0;
+            line-height: 1.9;
+            color: #34495e;
+            font-weight: 500;
+        }
+        .modal-content button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .pdf-clone {
+            background: white;
+            padding: 20px;
+            width: 210mm;
+            box-sizing: border-box;
+        }
+@media (max-width: 600px) {
+    .stats-ring-layout {
+        grid-template-columns: 1fr;
+        padding: 20px 15px;
+    }
+    .chart-container.ring-chart {
+        position: relative;
+        top: auto;
+        left: auto;
+        transform: none;
+        width: 180px;
+        height: 180px;
+        margin: 10px auto 0;
+    }
+}
+
+    </style>
+</head>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js')
+      .catch(console.error);
+  });
+}
+</script>
+
+<body>
+<div class="container">
+    
+    <button id="btn-back-to-top" onclick="scrollToTop()">⬆</button>
+
+    <div class="app-header">
+        <h1>پروژه مدیران مارلیک 🚀</h1>
+        <p>داشبورد جامع رشد و توسعه</p>
+        <input type="text" id="managerName" class="user-input" placeholder="نام مدیر..." oninput="localStorage.setItem('marlik_name', this.value); refreshBackupPreview(); if(document.getElementById('view-stats').classList.contains('active')) renderReports();">
+    </div>
+
+    <div id="view-home" class="view-section active">
+        <div class="task-card" onclick="openView('details', 1)">
+            <div style="display:flex; justify-content:space-between;">
+                <h3 style="margin:0; color:var(--primary);">تکلیف ۱: تحول ۳۰ روزه</h3>
+                <span style="font-size:1.5rem;">📋</span>
+            </div>
+            <p style="font-size:0.9rem; color:#666; margin:10px 0 20px;">
+                پایش ۱۲ گام کلیدی فروش و مدیریت.<br>
+                <span style="color:var(--secondary); font-size:0.8rem;">وضعیت: در حال اجرا</span>
+            </p>
+            
+            <div style="background:#f1f2f6; height:8px; border-radius:4px; overflow:hidden;">
+                <div id="home-prog-1" style="width:0%; background:var(--success); height:100%;"></div>
+            </div>
+            <div style="text-align:left; font-size:0.75rem; color:#999; margin-top:5px;" id="home-prog-txt-1">0%</div>
+        </div>
+
+        <div class="section-divider">مسیر آینده (بزودی)</div>
+        
+        <div class="task-card locked" style="padding:15px; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span>🔒</span> <strong>تکلیف ۲</strong>
+            </div>
+        </div>
+        <div class="task-card locked" style="padding:15px; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span>🔒</span> <strong>تکلیف ۳</strong>
+            </div>
+        </div>
+        <div class="task-card locked" style="padding:15px; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span>🔒</span> <strong>تکلیف ۴</strong>
+            </div>
+        </div>
+        <div class="task-card locked" style="padding:15px; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span>🔒</span> <strong>تکلیف ۵</strong>
+            </div>
+        </div>
+
+        <div style="text-align:center; color:#ccc; font-size:0.8rem; margin-top:30px;">طراحی: حسین علی‌دوست ، تیم آوید</div>
+    </div>
+
+    <div id="view-details" class="view-section">
+        <button class="back-btn" onclick="openView('home')">↩ بازگشت</button>
+        <h2 style="color:var(--primary); margin:0 0 15px 0;">چک‌لیست تکلیف ۱</h2>
+        
+        <div id="accordion-container"></div>
+
+        <button style="width:100%; padding:15px; background:white; border:2px solid var(--danger); color:var(--danger); border-radius:12px; margin-top:30px; font-weight:bold;" onclick="clearData()">🗑️ پاکسازی اطلاعات این تکلیف</button>
+    </div>
+
+    <div id="view-stats" class="view-section">
+        <div class="report-acc-item">
+            <div class="acc-header active" onclick="toggleReport('global')">
+                <span>📊 داشبورد عملکرد کلی</span>
+                <span>▲</span>
+            </div>
+            <div class="acc-body open" id="rep-body-global">
+                <div class="stats-ring-layout">
+                    <div class="stat-card ring-card">
+                        <div class="stat-val" id="g-weeks">1</div>
+                        <div class="stat-lbl">هفته جاری</div>
+                    </div>
+                    <div class="stat-card ring-card">
+                        <div class="stat-val" id="g-days">0</div>
+                        <div class="stat-lbl">روز اقدام شده</div>
+                    </div>
+                    <div class="stat-card ring-card">
+                        <div class="stat-val" id="g-total-actions">0</div>
+                        <div class="stat-lbl">تعداد تیک‌ها</div>
+                    </div>
+                    <div class="stat-card ring-card">
+                        <div class="stat-val" id="g-pct-text">0%</div>
+                        <div class="stat-lbl">درصد تکمیل</div>
+                    </div>
+                    <div class="chart-container ring-chart">
+                        <canvas id="overallPie" width="220" height="220"></canvas>
+                        <div class="chart-center">
+                            <span id="overallPieVal">0%</span>
+                            <small>پیشرفت کلی</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats-grid" style="margin-top:15px;">
+                    <div class="stat-card"><div class="stat-val" id="g-active-tasks">1</div><div class="stat-lbl">تکالیف فعال</div></div>
+                    <div class="stat-card"><div class="stat-val" id="g-total-actions-mini">0</div><div class="stat-lbl">کل اقدامات</div></div>
+                </div>
+
+                <div style="text-align:center;">
+                    <div style="font-size:0.9rem; color:#777; margin-bottom:5px;">میانگین پیشرفت کل</div>
+                    <div style="height:10px; background:#eee; border-radius:5px; overflow:hidden;">
+                        <div id="g-prog-bar" style="width:0%; height:100%; background:var(--secondary);"></div>
+                    </div>
+                    <div id="g-prog-txt" style="font-weight:bold; color:var(--primary); margin-top:5px;">0%</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="report-acc-item">
+            <div class="acc-header" onclick="toggleReport('t1')">
+                <span>📋 گزارش تکلیف ۱</span>
+                <span>▼</span>
+            </div>
+            <div class="acc-body" id="rep-body-t1">
+                <div id="pdf-content-t1">
+                    <div class="pdf-header">
+                        <h2>گزارش عملکرد: تکلیف ۱</h2>
+                        <h4 id="pdf-name-1"></h4>
+                    </div>
+
+                    <div class="report-title">
+                        <span>ریز آمار</span>
+                        <button class="btn-pdf" onclick="generatePDF('pdf-content-t1')">📥 PDF</button>
+                    </div>
+
+                    <div class="stats-ring-layout">
+                        <div class="stat-card ring-card">
+                            <div class="stat-val" id="t1-weeks">1</div>
+                            <div class="stat-lbl">هفته جاری</div>
+                        </div>
+                        <div class="stat-card ring-card">
+                            <div class="stat-val" id="t1-days">0</div>
+                            <div class="stat-lbl">روز اقدام شده</div>
+                        </div>
+                        <div class="stat-card ring-card">
+                            <div class="stat-val" id="t1-ticks">0</div>
+                            <div class="stat-lbl">تعداد تیک‌ها</div>
+                        </div>
+                        <div class="stat-card ring-card">
+                            <div class="stat-val" id="t1-pct">0%</div>
+                            <div class="stat-lbl">درصد تکمیل</div>
+                        </div>
+                        <div class="chart-container ring-chart">
+                            <canvas id="t1Pie" width="220" height="220"></canvas>
+                            <div class="chart-center">
+                                <span id="t1PieVal">0%</span>
+                                <small>تکمیل این تکلیف</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h4 style="margin-bottom:10px; color:#555; border-bottom:1px solid #eee; padding-bottom:5px;">ریز عملکرد گام‌ها</h4>
+                    <div id="t1-steps-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="view-backup" class="view-section">
+        <h2 style="color:var(--primary); margin:0 0 10px;">مدیریت پشتیبان‌گیری</h2>
+        <p style="color:#536170; line-height:1.9; margin-top:0;">در این بخش می‌توانید جدیدترین وضعیت ذخیره‌شده را به‌صورت کد رمزگذاری‌شده مشاهده کنید یا در صورت داشتن کد قبلی، اطلاعات خود را بازیابی نمایید.</p>
+        <div class="backup-section">
+            <div class="backup-card">
+                <h4>💾 تهیه نسخه پشتیبان</h4>
+                <p>آخرین وضعیت شما به‌صورت خودکار کدگذاری شده است. پیش از خروج از برنامه حتماً آن را در جای امن ذخیره کنید.</p>
+                <textarea id="backupPreview" readonly placeholder="کد پشتیبان در اینجا نمایش داده می‌شود."></textarea>
+                <button class="copy-btn" onclick="copyBackupCode()">کپی کد پشتیبان</button>
+            </div>
+            <div class="backup-card">
+                <h4>بازیابی اطلاعات</h4>
+                <p style="margin-top:0;">اگر قبلاً کد پشتیبان دارید، آن را اینجا وارد کنید تا اطلاعاتتان برگردد.</p>
+                <textarea id="backupInput" placeholder="کد پشتیبان را وارد کنید..."></textarea>
+                <button class="restore-btn" onclick="importData()">بازیابی اطلاعات</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <div class="nav-item active" id="nav-home" onclick="openView('home')">
+            <span class="nav-icon">🏠</span>خانه
+        </div>
+        <div class="nav-item" id="nav-stats" onclick="openView('stats')">
+            <span class="nav-icon">📊</span>گزارشات
+        </div>
+        <div class="nav-item" id="nav-backup" onclick="openView('backup')">
+            <span class="nav-icon">💾</span>بکاپ
+        </div>
+    </div>
+</div>
+
+<div id="motivation-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <div class="modal-icon">💡</div>
+        <h3>ببین منو :</h3>
+        <p id="motivation-quote"></p>
+        <button type="button" onclick="closeMotivation()">شروع می‌کنم</button>
+    </div>
+</div>
+
+<script>
+    const step12Content = `
+        <p>زمانی که شـما بـه ایـن گـام مـی رسـید الزم اسـت در سـایه الهـام بخشـی و کاریزمـا بـودن کـه بـه واسطه بدست آوردن و زندگی کردن همـه ویژگـی هـای رفتـاری و نگرشـی کـه در گـام هـای قبـل طـی کرده اید و به این مهـم رسـیده ایـد و بـا توجـه بـه فروتنـی و بخشـنده بـودن کـه از بـارزترین ویژگـی های شخصیتی یـک کـارآفرین مـی باشـد، بـا تمرکـز بـه سیسـتماتیک کـردن کسـب و کـار و تـدوین استراتژی های توسعه ، نسبت به حفـظ ایـن گـام اقـدام نماییـد.</p>
+        <p>بـرای رسـیدن بـه ایـن گـام شـما بـا فراز و نشیب های زیـادی مواجـه شـدید و مصـائب و مشـکالتی را تجربـه کـرده ایـد، بـا مـوانعی روبـرو شدید و بارها نا امید گشته اید. حال الزم است بـه عنـوان یـک الگـو، تجربیـات طـی کـردن ایـن مسـیر ارزشــمند را در طبــق اخــلاص گذاشــته و در راســتای توســعه دیگــران و رســاندن آنهــا بــه ایــن گــام، تالش نمایید.</p>
+    `;
+
+    const steps = [
+        { id: 1, t: "گام ۱: پذیرش و صداقت", feats: ["روحیه شنیدن «نه»", "صداقت داشتن", "فرمان‌پذیری"], caps: ["ارتباط با مشتری"] },
+        { id: 2, t: "گام ۲: درک و سیستم", feats: ["درک ارزش مشاوره", "جدی گرفتن شغل", "هدفمندی", "انگیزه", "تداوم"], caps: ["درک استیج درآمدزایی", "پلن کارمزد", "جذب", "تدریس"] },
+        { id: 3, t: "گام ۳: شنود و تمرکز", feats: ["شنونده بودن", "پشتکار", "رقابت پذیری", "قدر شناسی", "تمرکز"], caps: ["اقناع سازی", "لیست ارجاعی", "جلسات خطی"] },
+        { id: 4, t: "گام ۴: ارتباط و عمل", feats: ["ارتباط موثر", "مسئولیت پذیری", "تعهد", "انرژی بالا", "برنامه ریزی", "عملگرایی"], caps: ["جلسات گروهی", "مدیریت زمان", "تحلیل گزارش"] },
+        { id: 5, t: "گام ۵: هوش سازمانی", feats: ["انضباط فردی", "تصمیم گیری", "هوش سازمانی", "هوشمندانه کار کردن"], caps: ["تحلیل تیم", "تثبیت فروش", "استراتژی"] },
+        { id: 6, t: "گام ۶: ثبات و نگرش", feats: ["ثبات قدم", "آموزش پذیری", "بزرگ فکر کردن", "خارج از چارچوب"], caps: ["هویت سازمانی", "وفادارسازی"] },
+        { id: 7, t: "گام ۷: کار تیمی", feats: ["کار تیمی", "استقلال"], caps: ["طراحی مسیر کاری", "انتقال تجربه"] },
+        { id: 8, t: "گام ۸: خلاقیت", feats: ["پویایی", "خلاقیت", "عزت نفس"], caps: ["ساده سازی مفاهیم", "تولید مدیر"] },
+        { id: 9, t: "گام ۹: شجاعت", feats: ["ریسک پذیری", "شجاعت", "کاردانی", "قاطعیت"], caps: ["نگهداشت مدیران", "مدیریت تعارض"] },
+        { id: 10, t: "گام ۱۰: جزئیات", feats: ["توجه به جزئیات", "قابل اتکا بودن"], caps: ["مدیریت رفتار سازمانی", "رهبری"] },
+        { id: 11, t: "گام ۱۱: صبوری", feats: ["انعطاف پذیری", "صبوری"], caps: ["درآمدسازی تیم", "رهبری تیمی"] },
+        { id: 12, t: "گام ۱۲: کمال و توسعه", feats: [], caps: [], isText: true, content: step12Content }
+    ];
+    const days = ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'];
+
+    const motivationQuotes = [
+        { text: 'سعی نکنید مرد موفقی شوید، بلکه سعی کنید مرد ارزشمندی شوید.', author: 'انیشتین' },
+        { text: 'وسط سختی، فرصت نهفته است.', author: 'انیشتین' },
+        { text: 'فردی که هرگز اشتباه نکرده است هرگز چیز جدیدی را امتحان نکرده است.', author: 'انیشتین' },
+        { text: 'فقط یک زندگی برای دیگران زندگی ارزشمندی است.', author: 'انیشتین' },
+        { text: 'زندگی مثل دوچرخه سواری است. برای این که تعادل خود را نگهدارید، باید به حرکت ادامه دهید.', author: 'انیشتین' },
+        { text: 'تخیل مهم‌تر از دانش است.', author: 'انیشتین' },
+        { text: 'ضعف نگرش به ضعف شخصیت تبدیل می‌شود.', author: 'انیشتین' },
+        { text: 'جنون این است که یک کار را بارها و بارها انجام دهید، اما انتظار نتایج متفاوت را داشته باشید.', author: 'انیشتین' },
+        { text: 'تا زمانی که دست از تلاش برندارید، هرگز شکست نمی‌خورید.', author: 'انیشتین' },
+        { text: 'اگر می‌خواهید زندگی شادی داشته باشید، آن را به یک هدف گره بزنید، نه به افراد یا اشیاء.', author: 'انیشتین' },
+        { text: 'موفقیت با ابتکار عمل و پیگیری، مداومت، بیان فصاحت و عمق عشق شما حاصل می‌شود. امروز چه اقدام ساده‌ای می‌توانید انجام دهید تا حرکت جدیدی به سوی موفقیت در زندگی خود ایجاد کنید؟', author: 'آنتونی رابینز' },
+        { text: 'موفقیت این است که همه گزینه‌های شکست را قطع کنید.', author: 'آنتونی رابینز' },
+        { text: 'همیشه به خود اعتماد داشته باشید. اگر یک بار کاری را با موفقیت انجام داده باشید، باز هم می‌توانید.', author: 'آنتونی رابینز' },
+        { text: 'اگر می‌خواهید در زندگی خود موفق شوید، این عبارت را به خاطر بسپارید: آن گذشته با آینده برابر نیست... مهم این است، در حال حاضر قرار است چه کار کنید؟', author: 'آنتونی رابینز' },
+        { text: 'اگر می‌خواهید موفق باشید، فردی را پیدا کنید که به نتایج دلخواه شما رسیده است و از آنچه انجام می‌دهد کپی کنید و شما نیز به همان نتایج دست خواهید یافت.', author: 'آنتونی رابینز' },
+        { text: 'تفاوت بین افراد موفق و افراد معمولی در درک و واکنش آن‌ها به شکست است.', author: 'جان سی مکسول' },
+        { text: 'انسان‌های ناموفق و موفق در توانایی‌های خود تفاوت چندانی ندارند. آن‌ها برای رسیدن به توانایی‌های بالقوه خود تمایلات متفاوتی دارند.', author: 'جان سی مکسول' },
+        { text: 'تنها ضمانت شکست، قطع تلاش است.', author: 'جان سی مکسول' },
+        { text: 'هر روز صبح از خدا بپرسید: رویداد اصلی امروز چیست؟ امروز می‌خواهید روی چه چیزی تمرکز کنم؟', author: 'جان سی مکسول' },
+        { text: 'اگر امروز را برای انجام کار درست شروع کنید، در حال حاضر موفق شده‌اید، حتی اگر هنوز نشان داده نشده باشد.', author: 'جان سی مکسول' },
+        { text: 'خودتان و آنچه انجام می‌دهید را دوست داشته باشید؛ تنها رمز موفقیت.', author: 'استیو جابز' },
+        { text: 'تنها راه برای انجام کارهای بزرگ دوست داشتن کاری است که انجام می‌دهید.', author: 'استیو جابز' },
+        { text: 'اگر واقعاً به دقت نگاه کنید، اکثر موفقیت‌های یک شبه به طول انجامید.', author: 'استیو جابز' },
+        { text: 'رویاهایتان را دنبال کنید و فرصت‌ها را در شکست‌های زندگی ببینید.', author: 'استیو جابز' },
+        { text: 'اگر می‌خواهید به عنوان یک هنرمند زندگی خود را به شیوه‌ای خلاقانه ادامه دهید، نباید زیاد به گذشته نگاه کنید.', author: 'استیو جابز' },
+        { text: 'گاهی زندگی با آجر به سرت می‌زند؛ ایمان خود را از دست نده.', author: 'استیو جابز' },
+        { text: 'بیایید فردا را اختراع کنیم به‌جای این‌که نگران اتفاقات دیروز باشیم.', author: 'استیو جابز' },
+        { text: 'اشتباهات درس‌های مهمی را به شما می‌آموزد. هر بار که با یکی مواجه می‌شوید، یک قدم به هدف خود نزدیک می‌شوید.', author: 'استیو جابز' },
+        { text: 'آرزو نکنید که راحت‌تر بود، بلکه آرزو کنید کاش بهتر بودید. آرزوی مشکلات کمتر نداشته باشید، بلکه برای مهارت‌های بیشتر آرزو کنید. برای چالش کمتر آرزو نکنید، بلکه برای خرد بیشتر آرزو کنید.', author: 'جیم ران' },
+        { text: 'اگر نمی‌خواهید چیزهای غیرعادی را به خطر بیندازید، باید به چیزهای معمولی بسنده کنید.', author: 'جیم ران' },
+        { text: 'از هر کجا که هستید و با هر چیزی که دارید شروع کنید.', author: 'جیم ران' },
+        { text: 'تحصیل رسمی شما را برای امرار معاش آماده می‌کند، اما این خودآموزی است که شما را ثروتمند خواهد کرد.', author: 'جیم ران' },
+        { text: 'موفقیت چیزی نیست جز چند رشته ساده که هر روز تمرین می‌شود.', author: 'جیم ران' },
+        { text: 'یا تو روز را می‌دوانی یا روز تو را اداره می‌کند.', author: 'جیم ران' },
+        { text: 'همه ما باید نبردی شدید و مادام‌العمر در برابر کشش مداوم رو به پایین انجام دهیم. اگر آرام باشیم، حشرات و علف‌های هرز منفی به باغ می‌روند و همه چیز با ارزش را از بین می‌برند.', author: 'جیم ران' },
+        { text: 'انگیزه چیزی است که شما را شروع می‌کند؛ عادت چیزی است که شما را ادامه می‌دهد.', author: 'جیم ران' },
+        { text: 'برای حل هر مشکلی، سه سؤال از خود بپرسید: اول، چه کاری می‌توانم انجام دهم؟ دوم، چه چیزی می‌توانم بخوانم؟ سوم، از چه کسی می‌توانم بپرسم؟', author: 'جیم ران' },
+        { text: 'اگر واقعاً بخواهید کاری را انجام دهید، راهی پیدا خواهید کرد. اگر نخواهید، بهانه‌ای پیدا می‌کنید.', author: 'جیم ران' },
+        { text: 'اگر بر روی اهداف خود کار کنید، اهداف شما به سمت شما خواهند آمد. اگر بر روی برنامه خود کار کنید، برنامه شما روی شما کار خواهد کرد. هر چیز خوبی که بسازیم در نهایت ما را می‌سازد.', author: 'جیم ران' },
+        { text: 'انگیزه به‌تنهایی کافی نیست. اگر یک احمق دارید و به او انگیزه می‌دهید، حالا یک احمق با انگیزه دارید.', author: 'جیم ران' },
+        { text: 'هزینه کتاب آن‌قدر نیست؛ این همان چیزی است که اگر آن را نخوانید برای شما هزینه خواهد داشت.', author: 'جیم ران' },
+        { text: 'شما باید مسئولیت شخصی خود را بپذیرید. نمی‌توانید شرایط، فصل‌ها یا باد را تغییر دهید، اما می‌توانید خودتان را تغییر دهید.', author: 'جیم ران' },
+        { text: 'موفقیت نه جادویی است و نه اسرارآمیز؛ موفقیت نتیجه طبیعی به‌کارگیری مداوم اصول اساسی است.', author: 'جیم ران' },
+        { text: 'شکست یک رویداد منفرد و فاجعه‌بار نیست. شما یک‌شبه شکست نمی‌خورید؛ شکست چند اشتباه در قضاوت است که هر روز تکرار می‌شود.', author: 'جیم ران' },
+        { text: 'بیشتر از اینکه روی کار خود کار کنید، روی خودتان کار کنید.', author: 'جیم ران' },
+        { text: 'شما نمی‌توانید یک‌شبه مقصد خود را تغییر دهید، اما می‌توانید یک‌شبه مسیر خود را تغییر دهید.', author: 'جیم ران' },
+        { text: 'شما برای ساعتی حقوق نمی‌گیرید؛ به ازای ارزشی که به آن ساعت می‌آورید، پول می‌گیرید.', author: 'جیم ران' },
+        { text: 'فقط مطالب ساده را نخوانید. ممکن است سرگرم شوید، اما هرگز از آن رشد نخواهید کرد.', author: 'جیم ران' },
+        { text: 'اجازه دهید دیگران زندگی‌های کوچکی داشته باشند، اما شما نه. بگذارید دیگران بر سر چیزهای کوچک بحث کنند، اما شما نه. بگذارید دیگران برای دردهای کوچک گریه کنند، اما شما نه. بگذارید دیگران آینده خود را به دست دیگران بسپارند، اما شما نه.', author: 'جیم ران' },
+        { text: 'همه ما باید یکی از دو چیز را تحمل کنیم: درد نظم یا درد پشیمانی و ناامیدی.', author: 'جیم ران' },
+        { text: 'بدون احساس اضطرار، میل ارزش خود را از دست می‌دهد.', author: 'جیم ران' },
+        { text: 'زندگی و تجارت مانند تغییر فصل است. شما نمی‌توانید فصل‌ها را تغییر دهید، اما می‌توانید خودتان را تغییر دهید. اینجا فرصتی برای داشتن زندگی خارق‌العاده و تغییر خود است.', author: 'جیم ران' },
+        { text: 'انضباط پل بین اهداف و دستیابی است.', author: 'جیم ران' },
+        { text: 'از هر فرصتی برای تمرین مهارت‌های ارتباطی خود استفاده کنید تا در مواقع مهم، استعداد، سبک، وضوح و احساساتی داشته باشید که بر دیگران تأثیر بگذارد.', author: 'جیم ران' },
+        { text: 'اگر اوضاع را دوست نداری، آن را تغییر بده! تو درخت نیستی.', author: 'جیم ران' },
+        { text: 'روزها گران هستند. وقتی یک روز را صرف می‌کنید، یک روز کمتر برای گذراندن دارید؛ پس مطمئن شوید هر کدام را عاقلانه خرج می‌کنید.', author: 'جیم ران' },
+        { text: 'هر کاری که انجام می‌دهی و هر که هستی را با عطای توجهت تقدیم کن.', author: 'جیم ران' },
+        { text: 'یاد بگیرید چگونه با آنچه دارید خوشحال باشید، در حالی که به دنبال همه چیزهایی هستید که می‌خواهید.', author: 'جیم ران' },
+        { text: 'شما نمی‌توانید بدون تصمیم‌گیری پیشرفت کنید.', author: 'جیم ران' },
+        { text: 'نگویید اگر می‌توانستم، می‌کردم. بگویید اگر بتوانم، خواهم کرد.', author: 'جیم ران' },
+        { text: 'هیچ کس دیگری ما را عصبانی نمی‌کند؛ وقتی کنترل نگرش خود را از دست می‌دهیم، این خودمان هستیم که خود را عصبانی می‌کنیم.', author: 'جیم ران' },
+        { text: 'فلسفه شخصی شما بزرگ‌ترین عامل تعیین‌کننده در نحوه انجام زندگی شماست.', author: 'جیم ران' },
+        { text: 'چالش بزرگ این است که تبدیل به تمام چیزی شوید که امکان تبدیل شدن به آن را دارید. باور نمی‌کنید کشاندن خود تا حد نهایی چه می‌تواند با روح انسان بکند.', author: 'جیم ران' },
+        { text: 'چالش رهبری این است که قوی باشید، اما نه بی‌ادب؛ مهربان باشید، اما ضعیف نباشید؛ جسور باشید، اما قلدر نباشید؛ متفکر باشید، اما تنبل نباشید؛ فروتن باشید، اما ترسو نباشید؛ سرافراز باشید، اما مغرور نباشید؛ شوخ‌طبع باشید، اما بی‌خرد نباشید.', author: 'جیم ران' },
+        { text: 'هر چه بیشتر اهمیت دهید، می‌توانید قوی‌تر باشید.', author: 'جیم ران' },
+        { text: 'شخصیت صفتی است که بسیاری از صفات مهم مانند صداقت، شجاعت، پشتکار، اعتمادبه‌نفس و خرد را در خود دارد. شخصیت چیزی است که در درون خود ایجاد می‌کنید و مسئولیت تغییر آن با شماست.', author: 'جیم ران' },
+        { text: 'تا کی باید تلاش کنی؟ تا زمانی که...', author: 'جیم ران' },
+        { text: 'رشد از پذیرش شروع میشه نه از انکار!', author: null },
+        { text: 'باورهات، قطب‌نمای مسیرت هستند.', author: null },
+        { text: 'توهم دانایی، یه تله است.', author: null },
+        { text: 'تحول بیرونی، بازتاب دگرگونی درونی است.', author: null },
+        { text: 'شکست، آموزگار موفقیت است.', author: null },
+        { text: 'قدرت، قانونه توئه!', author: null },
+        { text: 'صبرت می‌سازه، رفتارت نمایان می‌کنه!', author: null },
+        { text: 'بهترین نسخه‌ات تو راهههههه', author: null },
+        { text: 'باور، آغاز توانایی یا ناتوانی ست.', author: null },
+        { text: 'درد، زمین تمرینه نه بهانه.', author: null },
+        { text: 'شجاعت آغاز برابر است با سرمایه رشد.', author: null },
+        { text: 'انتهای ناامیدی، آغاز راه توئه.', author: null },
+        { text: 'امروز، فردای دیروزه.', author: null },
+        { text: 'ایستادگی، فاتحان بزرگ رو می‌سازه.', author: null },
+        { text: 'امید، سلاح مخفی موفقیت.', author: null },
+        { text: 'هیچ بن‌بستی دائمی نیست.', author: null },
+        { text: 'سختی‌ها نیومدن که متوقفت کنند.', author: null },
+        { text: 'قدرت در تغییر توئه.', author: null }
+    ];
+
+    let checks = JSON.parse(localStorage.getItem('marlik_checks')) || {};
+    let stepWeeks = JSON.parse(localStorage.getItem('marlik_weeks')) || {};
+    let overallPercent = 0;
+    const pieStates = {};
+    steps.forEach(s => { if(!stepWeeks[s.id]) stepWeeks[s.id] = 1; });
+    document.getElementById('managerName').value = localStorage.getItem('marlik_name') || "";
+
+    updateCalculations();
+    function openView(view, taskId=null) {
+        document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+
+        const target = document.getElementById(`view-${view}`);
+        if(target) target.classList.add('active');
+
+        if(view === 'home') document.getElementById('nav-home').classList.add('active');
+        if(view === 'stats') {
+            document.getElementById('nav-stats').classList.add('active');
+            renderReports();
+        }
+        if(view === 'backup') {
+            document.getElementById('nav-backup').classList.add('active');
+            refreshBackupPreview();
+        }
+
+        if(taskId === 1) {
+            renderAccordion();
+        }
+        window.scrollTo(0,0);
+    }
+
+    window.onscroll = function() {
+        let btn = document.getElementById("btn-back-to-top");
+        if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
+            btn.style.display = "block";
+        } else {
+            btn.style.display = "none";
+        }
+    };
+    function scrollToTop() {
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+
+    function renderAccordion(forceOpenId = null) {
+        const container = document.getElementById('accordion-container');
+        let openId = forceOpenId;
+        if(!openId) {
+            const openEl = container.querySelector('.acc-body.open');
+            if(openEl) openId = parseInt(openEl.id.replace('body-', ''));
+        }
+        if(!openId) openId = steps[0].id;
+
+        container.innerHTML = "";
+        
+        steps.forEach(s => {
+            let isOpen = openId === s.id;
+            let arrow = isOpen ? '▲' : '▼';
+            let bodyContent = '';
+            if (s.isText && s.content) {
+                bodyContent = `<div class="step-text">${s.content}</div>`;
+            } else {
+                bodyContent = `
+                    <div class="week-ctrl-container">
+                        <div class="week-nav">
+                            <div class="week-nav-group">
+                                <button class="wc-btn small-btn" title="هفته اول" onclick="jumpWeek(event, ${s.id}, 'first')">⏭</button>
+                                <button class="wc-btn" onclick="changeWeek(event, ${s.id}, -1)">❮</button>
+                            </div>
+                            
+                            <div class="week-display">
+                                <span class="week-title">هفته ${stepWeeks[s.id]}</span>
+                                <span class="week-subtitle">ثبت عملکرد</span>
+                            </div>
+
+                            <div class="week-nav-group">
+                                <button class="wc-btn" onclick="changeWeek(event, ${s.id}, 1)">❯</button>
+                                <button class="wc-btn small-btn" title="آخرین هفته فعال" onclick="jumpWeek(event, ${s.id}, 'last')">⏮</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    ${renderFeats(s.id, s.feats, 'f')}
+                    ${renderFeats(s.id, s.caps, 'c')}
+                `;
+            }
+
+            const bodyClasses = isOpen ? 'acc-body open' : 'acc-body';
+
+            container.innerHTML += `
+                <div class="acc-item">
+                    <div class="acc-header ${isOpen ? 'active' : ''}" onclick="toggleAcc(${s.id})">
+                        <span>${s.t}</span>
+                        <span>${arrow}</span>
+                    </div>
+                    <div class="${bodyClasses}" id="body-${s.id}">
+                        ${bodyContent}
+                    </div>
+                </div>
+            `;
+        });
+    }
+    function renderFeats(sid, list, type) {
+        if(!list.length) return "";
+        let h = `<h5 style="margin:10px 0; color:var(--primary);">${type==='f'?'ویژگی‌های رفتاری':'توانمندی‌ها'}</h5>`;
+        list.forEach((f, idx) => {
+            let rowId = `${sid}_${type}_${idx}`;
+            let boxes = "";
+            for(let d=0; d<7; d++) {
+                let k = `${rowId}_w${stepWeeks[sid]}_d${d}`;
+                let isC = checks[k] ? 'checked' : '';
+                boxes += `<div class="day-box ${isC}" onclick="toggleCheck('${k}', this)">${days[d]}</div>`;
+            }
+            h += `<div class="feat-row"><span class="feat-name">${f}</span><div class="days-grid">${boxes}</div></div>`;
+        });
+        return h;
+    }
+
+    function toggleAcc(id) {
+        const targetBody = document.getElementById(`body-${id}`);
+        const isOpen = targetBody.classList.contains('open');
+
+        document.querySelectorAll('#accordion-container .acc-body').forEach(body => body.classList.remove('open'));
+        document.querySelectorAll('#accordion-container .acc-header').forEach(header => {
+            header.classList.remove('active');
+            const arrow = header.querySelector('span:last-child');
+            if(arrow) arrow.innerText = '▼';
+        });
+
+        if(!isOpen) {
+            targetBody.classList.add('open');
+            const header = targetBody.previousElementSibling;
+            if(header) {
+                header.classList.add('active');
+                const arrow = header.querySelector('span:last-child');
+                if(arrow) arrow.innerText = '▲';
+            }
+        }
+    }
+
+    function toggleReport(name) {
+        let body = document.getElementById(`rep-body-${name}`);
+        let head = body.previousElementSibling;
+        
+        if(body.classList.contains('open')) {
+            body.classList.remove('open');
+            head.classList.remove('active');
+            head.querySelector('span:last-child').innerText = '▼';
+        } else {
+            document.querySelectorAll('.report-acc-item .acc-body').forEach(b => b.classList.remove('open'));
+            document.querySelectorAll('.report-acc-item .acc-header').forEach(h => {
+                h.classList.remove('active');
+                if(h.querySelector('span:last-child')) h.querySelector('span:last-child').innerText = '▼';
+            });
+            
+            body.classList.add('open');
+            head.classList.add('active');
+            head.querySelector('span:last-child').innerText = '▲';
+            runReportAnimations(name, { restart: true });
+        }
+    }
+    function changeWeek(e, sid, dir) {
+        e.stopPropagation();
+        let nw = stepWeeks[sid] + dir;
+        if(nw < 1) return;
+        stepWeeks[sid] = nw;
+        localStorage.setItem('marlik_weeks', JSON.stringify(stepWeeks));
+        renderAccordion(sid);
+        refreshBackupPreview();
+        if(document.getElementById('view-stats').classList.contains('active')) renderReports();
+    }
+
+    function jumpWeek(e, sid, type) {
+        e.stopPropagation();
+        if(type === 'first') {
+            stepWeeks[sid] = 1;
+        } else {
+            let maxW = 1;
+            Object.keys(checks).forEach(k => {
+                if(k.startsWith(`${sid}_`) && checks[k]) {
+                    let parts = k.split('_'); 
+                    let w = parseInt(parts[3].replace('w',''));
+                    if(w > maxW) maxW = w;
+                }
+            });
+            stepWeeks[sid] = maxW;
+        }
+        localStorage.setItem('marlik_weeks', JSON.stringify(stepWeeks));
+        renderAccordion(sid);
+        refreshBackupPreview();
+        if(document.getElementById('view-stats').classList.contains('active')) renderReports();
+    }
+
+    function toggleCheck(key, el) {
+        checks[key] = !checks[key];
+        el.classList.toggle('checked');
+        localStorage.setItem('marlik_checks', JSON.stringify(checks));
+        updateCalculations();
+        refreshBackupPreview();
+        if(document.getElementById('view-stats').classList.contains('active')) renderReports();
+    }
+
+    function clearData() {
+        if(confirm("آیا مطمئن هستید تمام تیک‌های این تکلیف پاک شود؟")) {
+            checks = {};
+            stepWeeks = {};
+            steps.forEach(s => stepWeeks[s.id] = 1);
+            localStorage.setItem('marlik_checks', JSON.stringify(checks));
+            localStorage.setItem('marlik_weeks', JSON.stringify(stepWeeks));
+            renderAccordion();
+            updateCalculations();
+            refreshBackupPreview();
+            if(document.getElementById('view-stats').classList.contains('active')) renderReports();
+        }
+    }
+
+    function updateCalculations() {
+        let t1Checks = 0;
+        let t1Total = 0;
+        steps.forEach(s => {
+            if(s.id === 12) return;
+            t1Total += (s.feats.length + s.caps.length) * 7 * 4;
+            Object.keys(checks).forEach(k => {
+                if(k.startsWith(`${s.id}_`) && checks[k]) t1Checks++;
+            });
+        });
+        
+        let pct = t1Total===0 ? 0 : Math.round((t1Checks/t1Total)*100);
+        overallPercent = pct;
+        document.getElementById('home-prog-1').style.width = pct + "%";
+        document.getElementById('home-prog-txt-1').innerText = pct + "% تکمیل شده";
+        refreshBackupPreview();
+    }
+
+    function renderReports() {
+        let t1_ticks = 0;
+        let t1_daysSet = new Set();
+        let t1_weeksSet = new Set();
+        let stepStatsHtml = "";
+
+        steps.forEach(s => {
+            if(s.id === 12) return;
+            
+            let s_ticks = 0;
+            Object.keys(checks).forEach(k => {
+                if(k.startsWith(`${s.id}_`) && checks[k]) {
+                    s_ticks++;
+                    t1_ticks++;
+                    let parts = k.split('_');
+                    let w = parts[3];
+                    let d = parts[4];
+                    t1_weeksSet.add(`${s.id}-${w}`);
+                    t1_daysSet.add(`${s.id}-${w}-${d}`);
+                }
+            });
+
+            let s_total = (s.feats.length + s.caps.length) * 7 * 4;
+            let s_pct = s_total === 0 ? 0 : Math.round((s_ticks/s_total)*100);
+            
+            stepStatsHtml += `
+            <div style="margin-bottom:10px; font-size:0.85rem;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+                    <span>${s.t}</span>
+                    <span>${s_pct}% (${stepWeeks[s.id]} هفته)</span>
+                </div>
+                <div style="height:6px; background:#eee; border-radius:3px; overflow:hidden;">
+                    <div style="width:${s_pct}%; background:var(--secondary); height:100%;"></div>
+                </div>
+            </div>`;
+        });
+
+        const weekValues = Object.values(stepWeeks);
+        const maxWeekVal = weekValues.length ? Math.max(...weekValues) : 1;
+        const daysCount = t1_daysSet.size;
+
+        document.getElementById('t1-weeks').innerText = maxWeekVal;
+        document.getElementById('t1-days').innerText = daysCount;
+        document.getElementById('t1-ticks').innerText = t1_ticks;
+        document.getElementById('t1-pct').innerText = overallPercent + "%";
+        document.getElementById('t1-steps-list').innerHTML = stepStatsHtml;
+
+        document.getElementById('g-weeks').innerText = maxWeekVal;
+        document.getElementById('g-days').innerText = daysCount;
+        document.getElementById('g-total-actions').innerText = t1_ticks;
+        document.getElementById('g-total-actions-mini').innerText = t1_ticks;
+        document.getElementById('g-pct-text').innerText = overallPercent + "%";
+        document.getElementById('g-active-tasks').innerText = 1;
+        document.getElementById('g-prog-bar').style.width = overallPercent + "%";
+        document.getElementById('g-prog-txt').innerText = overallPercent + "%";
+
+        document.getElementById('t1PieVal').innerText = overallPercent + "%";
+        document.getElementById('overallPieVal').innerText = overallPercent + "%";
+
+        const globalOpen = document.getElementById('rep-body-global')?.classList.contains('open');
+        if(globalOpen) runReportAnimations('global', { restart: false });
+
+        const t1Open = document.getElementById('rep-body-t1')?.classList.contains('open');
+        if(t1Open) runReportAnimations('t1', { restart: false });
+    }
+    function initPieCanvas(canvas) {
+        if(!canvas || canvas.dataset.scaled === "true") return;
+        const dpr = window.devicePixelRatio || 1;
+        const baseSize = 220;
+        canvas.width = baseSize * dpr;
+        canvas.height = baseSize * dpr;
+        canvas.style.width = baseSize + "px";
+        canvas.style.height = baseSize + "px";
+        const ctx = canvas.getContext('2d');
+        ctx.scale(dpr, dpr);
+        canvas.dataset.scaled = "true";
+    }
+
+    function drawPieChart(ctx, value) {
+        const dpr = window.devicePixelRatio || 1;
+        const baseSize = ctx.canvas.width / dpr;
+        const center = baseSize / 2;
+        const outerRadius = center - 5;
+        const innerRadius = outerRadius - 35;
+
+        ctx.clearRect(0, 0, baseSize, baseSize);
+
+        ctx.beginPath();
+        ctx.moveTo(center, center);
+        ctx.fillStyle = "#e1e7f0";
+        ctx.arc(center, center, outerRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        const endAngle = (Math.PI * 2) * (value / 100);
+        ctx.beginPath();
+        ctx.moveTo(center, center);
+        ctx.fillStyle = "#f39c12";
+        ctx.arc(center, center, outerRadius, -Math.PI / 2, -Math.PI / 2 + endAngle, false);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.fillStyle = "#ffffff";
+        ctx.arc(center, center, innerRadius, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    function triggerPieAnimation(canvasId, labelId, targetPercent, options = {}) {
+        const { restart = false } = options;
+        const canvas = document.getElementById(canvasId);
+        const label = document.getElementById(labelId);
+        if(!canvas || !label) return;
+
+        targetPercent = Math.max(0, Math.min(100, targetPercent));
+        initPieCanvas(canvas);
+        const ctx = canvas.getContext('2d');
+
+        if(!pieStates[canvasId]) pieStates[canvasId] = { value: 0, frame: null };
+        const state = pieStates[canvasId];
+        if(state.frame) cancelAnimationFrame(state.frame);
+
+        const startValue = restart ? 0 : state.value || 0;
+        const change = targetPercent - startValue;
+        const duration = 1200;
+        let startTime = null;
+
+        function animate(timestamp) {
+            if(!startTime) startTime = timestamp;
+            const progress = Math.min((timestamp - startTime) / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            const current = startValue + change * eased;
+            drawPieChart(ctx, current);
+            label.innerText = Math.round(current) + "%";
+            if(progress < 1) {
+                state.frame = requestAnimationFrame(animate);
+            } else {
+                state.value = targetPercent;
+                state.frame = null;
+            }
+        }
+
+        if(change === 0 && !restart) {
+            drawPieChart(ctx, targetPercent);
+            label.innerText = Math.round(targetPercent) + "%";
+            state.value = targetPercent;
+            return;
+        }
+
+        state.frame = requestAnimationFrame(animate);
+    }
+
+    function runReportAnimations(name, options = {}) {
+        if(name === 'global') {
+            triggerPieAnimation('overallPie', 'overallPieVal', overallPercent, options);
+        }
+        if(name === 't1') {
+            triggerPieAnimation('t1Pie', 't1PieVal', overallPercent, options);
+        }
+    }
+
+    async function ensureFonts() {
+        if (document.fonts && document.fonts.ready) {
+            try { await document.fonts.ready; } catch (e) {}
+        }
+    }
+
+    async function generatePDF(elementId) {
+        const originalElement = document.getElementById(elementId);
+        if(!originalElement) return;
+        const name = document.getElementById('managerName').value || "نامشخص";
+
+        const clone = originalElement.cloneNode(true);
+        clone.id = `${elementId}-clone`;
+        clone.classList.add('pdf-clone');
+        clone.style.width = getComputedStyle(originalElement).width;
+
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'absolute';
+        wrapper.style.left = '-9999px';
+        wrapper.style.top = '0';
+        wrapper.style.width = clone.style.width;
+        wrapper.appendChild(clone);
+        document.body.appendChild(wrapper);
+
+        clone.querySelectorAll('.acc-body').forEach(body => {
+            body.classList.add('open');
+            body.style.display = 'block';
+        });
+        clone.querySelectorAll('.acc-header').forEach(header => {
+            header.classList.add('active');
+            const arrow = header.querySelector('span:last-child');
+            if(arrow) arrow.innerText = '▲';
+        });
+
+        const pdfHeader = clone.querySelector('.pdf-header');
+        if(pdfHeader) {
+            pdfHeader.style.display = 'block';
+            const nameHolder = pdfHeader.querySelector('#pdf-name-1');
+            if(nameHolder) nameHolder.innerText = name;
+        }
+
+        clone.querySelectorAll('button').forEach(btn => btn.style.display = 'none');
+
+        const opt = {
+            margin: [10, 10, 10, 10],
+            filename: `Marlik_Report_Task1.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['css', 'legacy'] }
+        };
+
+        try {
+            await ensureFonts();
+            await new Promise(resolve => requestAnimationFrame(resolve));
+            await html2pdf().set(opt).from(clone).save();
+        } catch (err) {
+            alert("خطا در تولید PDF. لطفاً دوباره تلاش کنید.");
+        } finally {
+            wrapper.remove();
+        }
+    }
+
+    function encodeBackup(data) {
+        return btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+    }
+
+    function decodeBackup(str) {
+        return JSON.parse(decodeURIComponent(escape(atob(str))));
+    }
+
+    function buildBackupString() {
+        const payload = {
+            c: checks,
+            w: stepWeeks,
+            n: document.getElementById('managerName').value || ""
+        };
+        return encodeBackup(payload);
+    }
+
+    function refreshBackupPreview() {
+        const preview = document.getElementById('backupPreview');
+        if(!preview) return;
+        try {
+            preview.value = buildBackupString();
+        } catch (error) {
+            preview.value = '';
+        }
+    }
+
+    function copyBackupCode() {
+        const preview = document.getElementById('backupPreview');
+        let code = preview && preview.value ? preview.value : '';
+        if(!code) {
+            try {
+                code = buildBackupString();
+                if(preview) preview.value = code;
+            } catch (err) {
+                alert("خطا در تولید کد پشتیبان.");
+                return;
+            }
+        }
+
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(code).then(() => {
+                alert("کد پشتیبان کپی شد.");
+            }).catch(() => {
+                fallbackCopy(code);
+            });
+        } else {
+            fallbackCopy(code);
+        }
+    }
+    function fallbackCopy(text) {
+        const temp = document.createElement('textarea');
+        temp.value = text;
+        temp.style.position = 'fixed';
+        temp.style.left = '-9999px';
+        document.body.appendChild(temp);
+        temp.focus();
+        temp.select();
+        try {
+            document.execCommand('copy');
+            alert("کد پشتیبان کپی شد.");
+        } catch (e) {
+            alert("امکان کپی خودکار وجود ندارد. لطفاً دستی کپی کنید.");
+        }
+        document.body.removeChild(temp);
+    }
+
+    function importData() {
+        const input = document.getElementById('backupInput');
+        let str = input ? input.value.replace(/\s/g, '') : '';
+        if(!str) {
+            alert("کد پشتیبان خالی است.");
+            return;
+        }
+        try {
+            const data = decodeBackup(str);
+            if(data.c) localStorage.setItem('marlik_checks', JSON.stringify(data.c));
+            if(data.w) localStorage.setItem('marlik_weeks', JSON.stringify(data.w));
+            if(data.n !== undefined) localStorage.setItem('marlik_name', data.n);
+            alert("بازیابی موفق بود. صفحه دوباره بارگذاری می‌شود.");
+            location.reload();
+        } catch(e) {
+            alert("کد پشتیبان نامعتبر است. لطفاً بررسی کنید.");
+        }
+    }
+
+    function showMotivation() {
+        const modal = document.getElementById('motivation-modal');
+        if(!modal) return;
+
+        const quoteEl = document.getElementById('motivation-quote');
+        if (quoteEl) {
+            if (motivationQuotes.length > 0) {
+                const randomIndex = Math.floor(Math.random() * motivationQuotes.length);
+                const { text, author } = motivationQuotes[randomIndex];
+                const authorLine = author ? `<span style="display:block; margin-top:8px; color:#7f8c8d;">— ${author}</span>` : '';
+                const helperLine = `<span style="display:block; margin-top:12px; font-size:0.85rem; color:#95a5a6;">هر بار که این داشبورد را باز می‌کنی، فرصتی تازه برای ساختن مسیر الهام‌بخش تیم و مشتریانت است.</span>`;
+                quoteEl.innerHTML = `«${text}»${authorLine}${helperLine}`;
+            } else {
+                quoteEl.innerHTML = '«برای امروزت الهام بگیر و گامی کوچک بردار.»<span style="display:block; margin-top:8px; color:#7f8c8d;">— پروژه مدیران مارلیک</span>';
+            }
+        }
+
+        modal.classList.remove('hidden');
+        document.body.classList.add('modal-open');
+    }
+
+    function closeMotivation() {
+        const modal = document.getElementById('motivation-modal');
+        if(!modal) return;
+        modal.classList.add('hidden');
+        document.body.classList.remove('modal-open');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        showMotivation();
+        refreshBackupPreview();
+    });
+</script>
+</body>
+</html>
