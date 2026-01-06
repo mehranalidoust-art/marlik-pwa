@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <title>مارلیک | آفلاین</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="./styles.css">
+  <style>
+    body {
+      background: #0f172a;
+      color: #f8fafc;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+    }
+    .offline-card {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(248, 250, 252, 0.1);
+      border-radius: 16px;
+      padding: 2rem;
+      max-width: 420px;
+      width: 100%;
+    }
+    button {
+      margin-top: 1.5rem;
+      background: #22d3ee;
+      color: #0f172a;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="offline-card">
+    <h1>ارتباط با سرور قطع شد ⚠️</h1>
+    <p>گزارش‌ها در دسترس نیستند اما آخرین داده‌های ذخیره‌شده در دستگاه محفوظ‌اند.</p>
+    <ul style="text-align:right;margin-top:1rem;">
+      <li>✅ تیک‌های ثبت‌شده آفلاین همگام‌سازی خواهند شد.</li>
+      <li>✅ آخرین کد پشتیبان در دستگاه حاضر است.</li>
+      <li>📨 پس از اتصال، اعلان دریافت به‌روزرسانی را می‌گیرید.</li>
+    </ul>
+    <button onclick="window.location.reload()">تلاش دوباره</button>
+  </div>
+</body>
+</html>

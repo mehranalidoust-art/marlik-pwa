@@ -8,7 +8,11 @@
 <!-- iOS tweaks -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="مدیران مارلیک">
-<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="120x120" href="./icons/icon-120.png">
+<link rel="apple-touch-icon" sizes="152x152" href="./icons/icon-152.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./icons/icon-180.png">
+<script defer src="./scripts/app.js"></script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>پروژه مدیران مارلیک - نسخه ۴</title>
@@ -495,6 +499,10 @@
 }
 
     </style>
+<script defer src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/11.0.1/firebase-messaging-compat.js"></script>
+<script defer src="./scripts/push.js"></script>
+
 </head>
 <script>
 if ('serviceWorker' in navigator) {
@@ -1391,5 +1399,6 @@ if ('serviceWorker' in navigator) {
         refreshBackupPreview();
     });
 </script>
+<script type="module" src="./scripts/push.js"></script>
 </body>
 </html>
