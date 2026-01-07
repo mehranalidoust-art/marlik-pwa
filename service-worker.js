@@ -107,7 +107,9 @@ self.addEventListener('activate', event => {
       await clients.claim();
 
       const allClients = await clients.matchAll({ includeUncontrolled: true });
-      allClients.forEach(client => client.postMessage({ type: 'SW_ACTIVATED', version: 'v5' }));
+      allClients.forEach(client =>
+        client.postMessage({ type: 'SW_ACTIVATED', version: 'v5' })
+      );
     })()
   );
 });
@@ -136,7 +138,9 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  const isStaticAsset = /\.(css|js|png|jpg|jpeg|svg|webp|woff2?|json)$/i.test(requestURL.pathname);
+  const isStaticAsset = /\.(css|js|png|jpg|jpeg|svg|webp|woff2?|json)$/i.test(
+    requestURL.pathname
+  );
 
   if (isStaticAsset) {
     event.respondWith(staleWhileRevalidate(event.request));
@@ -217,9 +221,3 @@ async function staleWhileRevalidate(request) {
 
   return cached || networkPromise;
 }
-
-
-
-
-
-
