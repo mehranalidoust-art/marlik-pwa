@@ -1,7 +1,6 @@
 importScripts('https://www.gstatic.com/firebasejs/12.7.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/12.7.0/firebase-messaging-compat.js');
 
-
 firebase.initializeApp({
   apiKey: 'AIzaSyC617j51ohyge5sc-BhmMz_3l6jpYctQ40',
   authDomain: 'marlik-managers-project.firebaseapp.com',
@@ -27,10 +26,11 @@ messaging.onBackgroundMessage(payload => {
 
 self.addEventListener('push', event => {
   if (!event.data) return;
+
   let payload = {};
   try {
     payload = event.data.json();
-  } catch (e) {
+  } catch (err) {
     payload = { notification: { title: 'پیام جدید مارلیک', body: event.data.text() } };
   }
 
@@ -49,26 +49,27 @@ self.addEventListener('push', event => {
 self.addEventListener('notificationclick', event => {
   event.notification.close();
   const targetUrl = event.notification.data?.url || './';
+
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
-      const opened = clientList.find(client => client.url === targetUrl);
-      if (opened) {
-        return opened.focus();
+      const openedClient = clientList.find(client => client.url === targetUrl);
+      if (openedClient) {
+        return openedClient.focus();
       }
       return clients.openWindow(targetUrl);
     })
   );
 });
 
-const PRECACHE = 'marlik-precache-v4';
-const RUNTIME = 'marlik-runtime-v4';
+const PRECACHE = 'marlik-precache-v5';
+const RUNTIME = 'marlik-runtime-v5';
 const BG_SYNC_TAG = 'marlik-sync';
 
 const PRECACHE_URLS = [
   './',
   './index.html',
   './offline.html',
-  './favicon.ico',  
+  './favicon.ico',
   './manifest.json',
   './scripts/app.js',
   './scripts/forms.js',
@@ -83,35 +84,38 @@ const PRECACHE_URLS = [
 
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(PRECACHE).then(cache => cache.addAll(PRECACHE_URLS))
-      .then(() => self.skipWaiting()) // فعال‌سازی فوری
+    (async () => {
+      const cache = await caches.open(PRECACHE);
+      await cache.addAll(PRECACHE_URLS);
+    })().catch(err => {
+      console.error('[SW] Precaching failed', err);
+      throw err;
+    })
   );
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil(
     (async () => {
-      await clients.claim(); // کنترل تب‌های باز
+      const allowlist = [PRECACHE, RUNTIME];
+      const cacheKeys = await caches.keys();
+
+      await Promise.all(
+        cacheKeys.map(key => (allowlist.includes(key) ? null : caches.delete(key)))
+      );
+
+      await clients.claim();
+
       const allClients = await clients.matchAll({ includeUncontrolled: true });
-      for (const client of allClients) {
-        client.postMessage({ type: 'NEW_VERSION_READY' });
-      }
+      allClients.forEach(client => client.postMessage({ type: 'SW_ACTIVATED', version: 'v5' }));
     })()
   );
 });
 
-
-
-self.addEventListener('activate', event => {
-  const allowlist = [PRECACHE, RUNTIME];
-  event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys.map(key => (!allowlist.includes(key) ? caches.delete(key) : null))
-      )
-    )
-  );
-  self.clients.claim();
+self.addEventListener('message', event => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('fetch', event => {
@@ -132,9 +136,9 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  const isStatic = /\.(css|js|png|jpg|jpeg|svg|webp|woff2?|json)$/i.test(requestURL.pathname);
+  const isStaticAsset = /\.(css|js|png|jpg|jpeg|svg|webp|woff2?|json)$/i.test(requestURL.pathname);
 
-  if (isStatic) {
+  if (isStaticAsset) {
     event.respondWith(staleWhileRevalidate(event.request));
   } else {
     event.respondWith(networkFirst(event.request));
@@ -168,12 +172,14 @@ async function sendPendingActions() {
 function openDB() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open('marlik-offline', 1);
+
     request.onupgradeneeded = () => {
       const db = request.result;
       if (!db.objectStoreNames.contains('pending-actions')) {
         db.createObjectStore('pending-actions', { autoIncrement: true });
       }
     };
+
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
@@ -187,9 +193,9 @@ async function cacheRuntime(request, response) {
 
 async function networkFirst(request) {
   try {
-    const fresh = await fetch(request);
-    cacheRuntime(request, fresh.clone());
-    return fresh;
+    const freshResponse = await fetch(request);
+    cacheRuntime(request, freshResponse.clone());
+    return freshResponse;
   } catch (err) {
     const cached = await caches.match(request);
     if (cached) return cached;
@@ -201,20 +207,17 @@ async function networkFirst(request) {
 async function staleWhileRevalidate(request) {
   const cache = await caches.open(RUNTIME);
   const cached = await cache.match(request);
+
   const networkPromise = fetch(request)
     .then(response => {
       cache.put(request, response.clone());
       return response;
     })
     .catch(() => cached);
+
   return cached || networkPromise;
 }
 
-self.addEventListener('message', event => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
-});
 
 
 
