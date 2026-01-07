@@ -1,3 +1,5 @@
+/* service-worker.js */
+
 importScripts('https://www.gstatic.com/firebasejs/12.7.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/12.7.0/firebase-messaging-compat.js');
 
@@ -51,7 +53,7 @@ self.addEventListener('push', event => {
   let payload = {};
   try {
     payload = event.data.json();
-  } catch (e) {
+  } catch (error) {
     payload = { notification: { title: 'پیام جدید مارلیک', body: event.data.text() } };
   }
 
@@ -71,13 +73,14 @@ self.addEventListener('notificationclick', event => {
   event.notification.close();
   const targetUrl = event.notification.data?.url || './';
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
-      const opened = clientList.find(client => new URL(client.url).pathname === new URL(targetUrl, self.location.origin).pathname);
-      if (opened) {
-        return opened.focus();
-      }
-      return clients.openWindow(targetUrl);
-    })
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then(clientList => {
+        const opened = clientList.find(client => new URL(client.url).pathname === new URL(targetUrl, self.location.origin).pathname);
+        if (opened) {
+          return opened.focus();
+        }
+        return clients.openWindow(targetUrl);
+      })
   );
 });
 
@@ -118,6 +121,7 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
 
   const requestURL = new URL(event.request.url);
+
   if (requestURL.origin !== self.location.origin) {
     return;
   }
@@ -146,9 +150,8 @@ self.addEventListener('sync', event => {
 });
 
 self.addEventListener('message', event => {
-  if (!event.data) return;
-  if (event.data.type === 'SKIP_WAITING') {
-    console.info('[SW] SKIP_WAITING received, activating new worker.');
+  if (event.data?.type === 'SKIP_WAITING') {
+    console.info('[SW] SKIP_WAITING received → activating new worker');
     self.skipWaiting();
   }
 });
@@ -196,11 +199,13 @@ async function networkFirst(request) {
     const fresh = await fetch(request);
     cacheRuntime(request, fresh.clone());
     return fresh;
-  } catch (err) {
+  } catch (error) {
     const cached = await caches.match(request);
     if (cached) return cached;
-    if (request.mode === 'navigate') return caches.match('./offline.html');
-    throw err;
+    if (request.mode === 'navigate') {
+      return caches.match('./offline.html');
+    }
+    throw error;
   }
 }
 
