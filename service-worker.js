@@ -70,7 +70,6 @@ const PRECACHE_URLS = [
   './offline.html',
   './favicon.ico',  
   './manifest.json',
-  './styles.css',
   './scripts/app.js',
   './scripts/forms.js',
   './scripts/idb-helpers.js',
@@ -219,6 +218,7 @@ self.addEventListener('message', event => {
     self.skipWaiting();
   }
 });
+
 
 
 
