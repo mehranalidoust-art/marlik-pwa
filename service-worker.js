@@ -14,7 +14,7 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-const SW_VERSION = 'v6';
+const SW_VERSION = 'v5';
 const PRECACHE = 'marlik-precache-v5';
 const RUNTIME = 'marlik-runtime-v5';
 const BG_SYNC_TAG = 'marlik-sync';
@@ -220,4 +220,3 @@ async function staleWhileRevalidate(request) {
     .catch(() => cached);
   return cached || networkPromise;
 }
-
