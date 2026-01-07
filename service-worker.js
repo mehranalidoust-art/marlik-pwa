@@ -1,6 +1,7 @@
 importScripts('https://www.gstatic.com/firebasejs/12.7.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/12.7.0/firebase-messaging-compat.js');
 
+
 firebase.initializeApp({
   apiKey: 'AIzaSyC617j51ohyge5sc-BhmMz_3l6jpYctQ40',
   authDomain: 'marlik-managers-project.firebaseapp.com',
@@ -84,7 +85,7 @@ const PRECACHE_URLS = [
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     console.log('[SW] Install started - checking precache list...');
-    const cache = await caches.open(PRECACHE_NAME);
+    const cache = await caches.open(PRECACHE);
     const requests = PRECACHE_URLS.map(
       (url) => new Request(url, { cache: 'reload' })
     );
@@ -218,5 +219,6 @@ self.addEventListener('message', event => {
     self.skipWaiting();
   }
 });
+
 
 
