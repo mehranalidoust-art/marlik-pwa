@@ -3,12 +3,16 @@
     return;
   }
 
+  const UPDATE_SUCCESS_FLAG = '__MARLIK_UPDATE_COMPLETED__';
+
   const shouldRequireBackup =
     window.__MARLIK_REQUIRE_BACKUP_BEFORE_UPDATE__ !== undefined
       ? Boolean(window.__MARLIK_REQUIRE_BACKUP_BEFORE_UPDATE__)
       : true;
 
   window.addEventListener('load', async () => {
+    maybeShowDeferredSuccessToast();
+
     try {
       const registration = await navigator.serviceWorker.register('./service-worker.js');
       initializeUpdateFlow(registration);
@@ -40,8 +44,8 @@
     });
 
     navigator.serviceWorker.addEventListener('message', event => {
-      if (event.data?.type === 'SW_ACTIVATED') {
-        showToast('اپلیکیشن با موفقیت بروزرسانی شد.', 'success');
+      if (event.data?.type === 'FORCE_REFRESH') {
+        window.location.reload();
       }
     });
   }
@@ -50,7 +54,8 @@
     if (!waitingWorker) return;
 
     if (!shouldRequireBackup) {
-      showToast('نسخه جدید آماده شد، بروزرسانی در حال تکمیل است.', 'info');
+      markSuccessToastForNextLoad();
+      showToast('نسخهٔ جدید آماده است؛ بروزرسانی در حال اعمال می‌باشد.', 'info');
       waitingWorker.postMessage({ type: 'SKIP_WAITING' });
       return;
     }
@@ -64,9 +69,10 @@
         const copied = await copyToClipboard(backupPayload);
 
         if (copied) {
-          showToast('آخرین اطلاعات به حافظه موقت منتقل شد. در جای مناسبی ذخیره کنید.', 'success');
+          showToast('آخرین اطلاعات در کلیپ‌بورد قرار گرفت. لطفاً در جای امن ذخیره کنید.', 'success');
+          markSuccessToastForNextLoad();
         } else {
-          showToast('کپی خودکار انجام نشد. لطفاً به صورت دستی از بخش بکاپ استفاده کنید.', 'warning');
+          showToast('کپی خودکار انجام نشد؛ لطفاً از بخش بکاپ ذخیره کنید.', 'warning');
         }
 
         waitingWorker.postMessage({ type: 'SKIP_WAITING' });
@@ -76,9 +82,37 @@
       onCancel: closeModal => {
         closeModal();
         window.__marlikUpdateModalOpen = false;
-        showToast('بروزرسانی به تعویق افتاد. برای دریافت نسخه جدید بعداً صفحه را تازه‌سازی کنید.', 'info');
+        showToast('بروزرسانی به تعویق افتاد. برای نصب نسخهٔ جدید بعداً صفحه را تازه‌سازی کنید.', 'info');
       }
     });
+  }
+
+  function markSuccessToastForNextLoad() {
+    try {
+      sessionStorage.setItem(UPDATE_SUCCESS_FLAG, '1');
+    } catch (err) {
+      window.__marlikDeferredSuccessToast = true;
+    }
+  }
+
+  function maybeShowDeferredSuccessToast() {
+    let shouldShow = false;
+
+    try {
+      if (sessionStorage.getItem(UPDATE_SUCCESS_FLAG) === '1') {
+        shouldShow = true;
+        sessionStorage.removeItem(UPDATE_SUCCESS_FLAG);
+      }
+    } catch (err) {
+      if (window.__marlikDeferredSuccessToast) {
+        shouldShow = true;
+        window.__marlikDeferredSuccessToast = false;
+      }
+    }
+
+    if (shouldShow) {
+      showToast('اپلیکیشن با موفقیت بروزرسانی شد.', 'success');
+    }
   }
 
   async function buildBackupPayload() {
@@ -111,7 +145,7 @@
   async function copyToClipboard(text) {
     if (!text) return false;
 
-    if (navigator.clipboard && navigator.clipboard.writeText) {
+    if (navigator.clipboard?.writeText) {
       try {
         await navigator.clipboard.writeText(text);
         return true;
@@ -149,11 +183,11 @@
     dialog.className = 'marlik-update-dialog';
 
     const title = document.createElement('h2');
-    title.textContent = 'نسخه جدید آماده نصب است';
+    title.textContent = 'نسخهٔ جدید آماده نصب است';
 
     const description = document.createElement('p');
     description.textContent =
-      'قبل از بروزرسانی، از بخش بکاپ نسخه‌ای از اطلاعات خود تهیه کنید. با انتخاب دکمه زیر، آخرین اطلاعات شما در حافظهٔ موقت ذخیره می‌شود. سپس آن را در مکانی امن پیست کنید.';
+      'برای جلوگیری از از دست رفتن اطلاعات، ابتدا بکاپ خود را کپی کنید. پس از فشردن دکمهٔ زیر، جدیدترین وضعیت در کلیپ‌بورد قرار داده می‌شود و سپس بروزرسانی انجام خواهد شد.';
 
     const actions = document.createElement('div');
     actions.className = 'marlik-update-actions';
@@ -184,9 +218,7 @@
     function closeModal() {
       overlay.classList.remove('marlik-update-overlay--visible');
       setTimeout(() => {
-        if (overlay.parentNode) {
-          overlay.parentNode.removeChild(overlay);
-        }
+        overlay.parentNode?.removeChild(overlay);
       }, 200);
     }
 
@@ -326,9 +358,7 @@
     setTimeout(() => {
       toast.classList.remove('marlik-toast--visible');
       setTimeout(() => {
-        if (toast.parentNode) {
-          toast.parentNode.removeChild(toast);
-        }
+        toast.parentNode?.removeChild(toast);
         if (!container.hasChildNodes()) {
           container.parentNode?.removeChild(container);
         }
