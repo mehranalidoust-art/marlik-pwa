@@ -81,12 +81,29 @@ const PRECACHE_URLS = [
   './icons/icon-512.png'
 ];
 
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(PRECACHE).then(cache => cache.addAll(PRECACHE_URLS))
-  );
-  self.skipWaiting();
+self.addEventListener('install', (event) => {
+  event.waitUntil((async () => {
+    console.log('[SW] Install started - checking precache list...');
+    const cache = await caches.open(PRECACHE_NAME);
+    const requests = PRECACHE_URLS.map(
+      (url) => new Request(url, { cache: 'reload' })
+    );
+
+    for (const request of requests) {
+      try {
+        console.log('[SW] Caching →', request.url);
+        await cache.add(request);
+      } catch (err) {
+        console.error('[SW] Failed to cache:', request.url, err);
+        throw err;
+      }
+    }
+
+    console.log('[SW] All precache entries cached successfully');
+    await self.skipWaiting();
+  })());
 });
+
 
 self.addEventListener('activate', event => {
   const allowlist = [PRECACHE, RUNTIME];
@@ -201,4 +218,5 @@ self.addEventListener('message', event => {
     self.skipWaiting();
   }
 });
+
 
