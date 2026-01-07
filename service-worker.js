@@ -12,55 +12,7 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-messaging.onBackgroundMessage(payload => {
-  const notification = payload.notification || {};
-  const title = notification.title || 'پیام جدید مارلیک';
-  const options = {
-    body: notification.body || 'اعلان جدید برای شما وجود دارد.',
-    icon: notification.icon || './icons/icon-192.png',
-    badge: './icons/icon-120.png',
-    data: { url: notification.click_action || './' }
-  };
-  self.registration.showNotification(title, options);
-});
-
-self.addEventListener('push', event => {
-  if (!event.data) return;
-
-  let payload = {};
-  try {
-    payload = event.data.json();
-  } catch (err) {
-    payload = { notification: { title: 'پیام جدید مارلیک', body: event.data.text() } };
-  }
-
-  const notification = payload.notification || payload;
-  const title = notification.title || 'پیام جدید مارلیک';
-  const options = {
-    body: notification.body || '',
-    icon: notification.icon || './icons/icon-192.png',
-    badge: './icons/icon-120.png',
-    data: { url: notification.click_action || notification.data?.url || './' }
-  };
-
-  event.waitUntil(self.registration.showNotification(title, options));
-});
-
-self.addEventListener('notificationclick', event => {
-  event.notification.close();
-  const targetUrl = event.notification.data?.url || './';
-
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
-      const openedClient = clientList.find(client => client.url === targetUrl);
-      if (openedClient) {
-        return openedClient.focus();
-      }
-      return clients.openWindow(targetUrl);
-    })
-  );
-});
-
+const SW_VERSION = 'v5';
 const PRECACHE = 'marlik-precache-v5';
 const RUNTIME = 'marlik-runtime-v5';
 const BG_SYNC_TAG = 'marlik-sync';
@@ -82,49 +34,90 @@ const PRECACHE_URLS = [
   './icons/icon-512.png'
 ];
 
+messaging.onBackgroundMessage(payload => {
+  const notification = payload.notification || {};
+  const title = notification.title || 'پیام جدید مارلیک';
+  const options = {
+    body: notification.body || 'اعلان جدید برای شما وجود دارد.',
+    icon: notification.icon || './icons/icon-192.png',
+    badge: './icons/icon-120.png',
+    data: { url: notification.click_action || './' }
+  };
+  self.registration.showNotification(title, options);
+});
+
+self.addEventListener('push', event => {
+  if (!event.data) return;
+  let payload = {};
+  try {
+    payload = event.data.json();
+  } catch (e) {
+    payload = { notification: { title: 'پیام جدید مارلیک', body: event.data.text() } };
+  }
+
+  const notification = payload.notification || payload;
+  const title = notification.title || 'پیام جدید مارلیک';
+  const options = {
+    body: notification.body || '',
+    icon: notification.icon || './icons/icon-192.png',
+    badge: './icons/icon-120.png',
+    data: { url: notification.click_action || notification.data?.url || './' }
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const targetUrl = event.notification.data?.url || './';
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+      const opened = clientList.find(client => new URL(client.url).pathname === new URL(targetUrl, self.location.origin).pathname);
+      if (opened) {
+        return opened.focus();
+      }
+      return clients.openWindow(targetUrl);
+    })
+  );
+});
+
 self.addEventListener('install', event => {
   event.waitUntil(
-    (async () => {
-      const cache = await caches.open(PRECACHE);
-      await cache.addAll(PRECACHE_URLS);
-    })().catch(err => {
-      console.error('[SW] Precaching failed', err);
-      throw err;
-    })
+    caches.open(PRECACHE).then(cache => cache.addAll(PRECACHE_URLS))
   );
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil(
     (async () => {
-      const allowlist = [PRECACHE, RUNTIME];
-      const cacheKeys = await caches.keys();
-
+      const keys = await caches.keys();
       await Promise.all(
-        cacheKeys.map(key => (allowlist.includes(key) ? null : caches.delete(key)))
+        keys.map(key => {
+          if (![PRECACHE, RUNTIME].includes(key)) {
+            return caches.delete(key);
+          }
+          return undefined;
+        })
       );
 
       await clients.claim();
 
       const allClients = await clients.matchAll({ includeUncontrolled: true });
-      allClients.forEach(client =>
-        client.postMessage({ type: 'SW_ACTIVATED', version: 'v5' })
-      );
+      for (const client of allClients) {
+        client.postMessage({
+          type: 'SW_ACTIVATED',
+          version: SW_VERSION,
+          toast: 'اپلیکیشن با موفقیت بروزرسانی شد.'
+        });
+      }
     })()
   );
-});
-
-self.addEventListener('message', event => {
-  if (event.data?.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
 });
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
 
   const requestURL = new URL(event.request.url);
-
   if (requestURL.origin !== self.location.origin) {
     return;
   }
@@ -138,11 +131,8 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  const isStaticAsset = /\.(css|js|png|jpg|jpeg|svg|webp|woff2?|json)$/i.test(
-    requestURL.pathname
-  );
-
-  if (isStaticAsset) {
+  const isStatic = /\.(css|js|png|jpg|jpeg|svg|webp|woff2?|json)$/i.test(requestURL.pathname);
+  if (isStatic) {
     event.respondWith(staleWhileRevalidate(event.request));
   } else {
     event.respondWith(networkFirst(event.request));
@@ -152,6 +142,14 @@ self.addEventListener('fetch', event => {
 self.addEventListener('sync', event => {
   if (event.tag === BG_SYNC_TAG) {
     event.waitUntil(sendPendingActions());
+  }
+});
+
+self.addEventListener('message', event => {
+  if (!event.data) return;
+  if (event.data.type === 'SKIP_WAITING') {
+    console.info('[SW] SKIP_WAITING received, activating new worker.');
+    self.skipWaiting();
   }
 });
 
@@ -176,14 +174,12 @@ async function sendPendingActions() {
 function openDB() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open('marlik-offline', 1);
-
     request.onupgradeneeded = () => {
       const db = request.result;
       if (!db.objectStoreNames.contains('pending-actions')) {
         db.createObjectStore('pending-actions', { autoIncrement: true });
       }
     };
-
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
@@ -197,9 +193,9 @@ async function cacheRuntime(request, response) {
 
 async function networkFirst(request) {
   try {
-    const freshResponse = await fetch(request);
-    cacheRuntime(request, freshResponse.clone());
-    return freshResponse;
+    const fresh = await fetch(request);
+    cacheRuntime(request, fresh.clone());
+    return fresh;
   } catch (err) {
     const cached = await caches.match(request);
     if (cached) return cached;
@@ -211,13 +207,11 @@ async function networkFirst(request) {
 async function staleWhileRevalidate(request) {
   const cache = await caches.open(RUNTIME);
   const cached = await cache.match(request);
-
   const networkPromise = fetch(request)
     .then(response => {
       cache.put(request, response.clone());
       return response;
     })
     .catch(() => cached);
-
   return cached || networkPromise;
 }
