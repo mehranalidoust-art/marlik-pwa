@@ -67,6 +67,7 @@ const PRECACHE_URLS = [
   './',
   './index.html',
   './offline.html',
+  './favicon.ico',  
   './manifest.json',
   './styles.css',
   './scripts/app.js',
@@ -200,3 +201,4 @@ self.addEventListener('message', event => {
     self.skipWaiting();
   }
 });
+
